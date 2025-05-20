@@ -3,6 +3,8 @@ package com.example;
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.*;
 import com.datastax.oss.driver.api.core.ConsistencyLevel;
+import com.datastax.oss.driver.api.core.config.DefaultDriverOption;
+import com.datastax.oss.driver.api.core.config.DriverConfigLoader;
 import java.net.InetSocketAddress;
 import java.util.UUID;
 import java.time.Instant;
@@ -17,15 +19,26 @@ public class ConsistencyDemo {
         session = CqlSession.builder()
                 .addContactPoint(new InetSocketAddress("0.0.0.0", 9042))
                 .withLocalDatacenter("datacenter1")
+                .withConfigLoader(
+                    DriverConfigLoader.programmaticBuilder()
+                        .withDuration(DefaultDriverOption.REQUEST_TIMEOUT, Duration.ofSeconds(30))
+                        .withDuration(DefaultDriverOption.CONNECTION_INIT_QUERY_TIMEOUT, Duration.ofSeconds(30))
+                        .withDuration(DefaultDriverOption.CONTROL_CONNECTION_TIMEOUT, Duration.ofSeconds(30))
+                        .withDuration(DefaultDriverOption.METADATA_SCHEMA_REQUEST_TIMEOUT, Duration.ofSeconds(30))
+                        .build())
                 .build();
+        System.out.println("Conexión establecida correctamente");
     }
     
     public void prepararEsquema() {
+        System.out.println("Creando keyspace con factor de replicación 3...");
         session.execute("CREATE KEYSPACE IF NOT EXISTS prueba_consistencia " +
                       "WITH REPLICATION = {'class' : 'SimpleStrategy', 'replication_factor' : 3}");
         
+        System.out.println("Usando el keyspace prueba_consistencia...");
         session.execute("USE prueba_consistencia");
         
+        System.out.println("Creando tabla datos_prueba si no existe...");
         session.execute("CREATE TABLE IF NOT EXISTS datos_prueba (" +
                       "test_id UUID, " +
                       "valor TEXT, " +
@@ -73,6 +86,7 @@ public class ConsistencyDemo {
     }
     
     public void limpiar() {
+        System.out.println("\nLimpiando tabla de datos_prueba...");
         session.execute("TRUNCATE prueba_consistencia.datos_prueba");
     }
     
@@ -99,6 +113,9 @@ public class ConsistencyDemo {
             
             demo.ejecutarPrueba(ConsistencyLevel.ONE, 100);
             
+        } catch (Exception e) {
+            System.err.println("Error en la demostración: " + e.getMessage());
+            e.printStackTrace();
         } finally {
             demo.cerrar();
         }
