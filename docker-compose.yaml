@@ -1,0 +1,81 @@
+version: '3'
+
+services:
+  # Primer nodo de Cassandra
+  cassandra-node1:
+      image: cassandra:latest          # Usa la imagen oficial más reciente de Cassandra
+      container_name: cassandra-node1  # Nombre identificador del contenedor
+      ports:
+        - "9042:9042"                 # Expone el puerto 9042 para conexiones CQL (Cassandra Query Language)
+      environment:
+        - CASSANDRA_CLUSTER_NAME=CassandraCluster  # Nombre del clúster Cassandra
+        - CASSANDRA_DC=datacenter1     # Define el datacenter del nodo
+        - CASSANDRA_RACK=rack1         # Define el rack físico/lógico del nodo
+        - CASSANDRA_ENDPOINT_SNITCH=GossipingPropertyFileSnitch  # Mecanismo para descubrir topología de red
+        - JVM_OPTS=-Xms384m -Xmx768m   # Configuración inicial y máxima de memoria JVM
+        - MAX_HEAP_SIZE=768M           # Memoria máxima asignada al heap de Cassandra
+        - HEAP_NEWSIZE=200M            # Tamaño de memoria para nuevas generaciones de objetos
+      deploy:
+        resources:
+          limits:
+            memory: 1.5G              # Límite máximo de RAM para el contenedor
+          reservations:
+            memory: 768M             # Memoria reservada garantizada
+      networks:
+        - cassandra-network          # Red dedicada para comunicación entre nodos
+
+  # Segundo nodo de Cassandra (configuración similar)
+  cassandra-node2:
+    image: cassandra:latest
+    container_name: cassandra-node2
+    ports:
+      - "9043:9042"
+    environment:
+      - CASSANDRA_CLUSTER_NAME=CassandraCluster
+      - CASSANDRA_DC=datacenter1
+      - CASSANDRA_RACK=rack1
+      - CASSANDRA_ENDPOINT_SNITCH=GossipingPropertyFileSnitch
+      - CASSANDRA_SEEDS=cassandra-node1
+      - JVM_OPTS=-Xms384m -Xmx768m
+      - MAX_HEAP_SIZE=768M
+      - HEAP_NEWSIZE=200M
+    deploy:
+      resources:
+        limits:
+          memory: 1.5G
+        reservations:
+          memory: 768M
+    depends_on:
+      - cassandra-node1
+    networks:
+      - cassandra-network
+
+  # Tercer nodo de Cassandra (configuración similar)
+  cassandra-node3:
+    image: cassandra:latest
+    container_name: cassandra-node3
+    ports:
+      - "9044:9042"
+    environment:
+      - CASSANDRA_CLUSTER_NAME=CassandraCluster
+      - CASSANDRA_DC=datacenter1
+      - CASSANDRA_RACK=rack1
+      - CASSANDRA_ENDPOINT_SNITCH=GossipingPropertyFileSnitch
+      - CASSANDRA_SEEDS=cassandra-node1
+      - JVM_OPTS=-Xms384m -Xmx768m
+      - MAX_HEAP_SIZE=768M
+      - HEAP_NEWSIZE=200M
+    deploy:
+      resources:
+        limits:
+          memory: 1.5G
+        reservations:
+          memory: 768M
+    depends_on:
+      - cassandra-node1
+    networks:
+      - cassandra-network
+
+networks:
+  cassandra-network:
+    driver: bridge
