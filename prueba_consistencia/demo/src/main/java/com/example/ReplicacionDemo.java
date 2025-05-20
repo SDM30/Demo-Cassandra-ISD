@@ -3,9 +3,12 @@ package com.example;
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.*;
 import com.datastax.oss.driver.api.core.ConsistencyLevel;
+import com.datastax.oss.driver.api.core.config.DefaultDriverOption;
+import com.datastax.oss.driver.api.core.config.DriverConfigLoader;
 import java.net.InetSocketAddress;
 import java.util.UUID;
 import java.time.Instant;
+import java.time.Duration;
 
 public class ReplicacionDemo {
     
@@ -16,6 +19,13 @@ public class ReplicacionDemo {
         session = CqlSession.builder()
                 .addContactPoint(new InetSocketAddress("0.0.0.0", 9042))
                 .withLocalDatacenter("datacenter1")
+                .withConfigLoader(
+                    com.datastax.oss.driver.api.core.config.DriverConfigLoader.programmaticBuilder()
+                        .withDuration(com.datastax.oss.driver.api.core.config.DefaultDriverOption.REQUEST_TIMEOUT, java.time.Duration.ofSeconds(30))
+                        .withDuration(com.datastax.oss.driver.api.core.config.DefaultDriverOption.CONNECTION_INIT_QUERY_TIMEOUT, java.time.Duration.ofSeconds(30))
+                        .withDuration(com.datastax.oss.driver.api.core.config.DefaultDriverOption.CONTROL_CONNECTION_TIMEOUT, java.time.Duration.ofSeconds(30))
+                        .withDuration(com.datastax.oss.driver.api.core.config.DefaultDriverOption.METADATA_SCHEMA_REQUEST_TIMEOUT, java.time.Duration.ofSeconds(30))
+                        .build())
                 .build();
         System.out.println("Conexión establecida correctamente");
     }
